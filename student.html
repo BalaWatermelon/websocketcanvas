@@ -6,26 +6,51 @@
 </head>
 
 <body>
-    <h4>Student<h4>
+    <h4 id="title">Student<h4>
+    Classmates:
+    <ul id="studentList">
+    </ul>
     <canvas id='canvas' height="500" width="500">
     </canvas>
-    <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+    
+    <script type="application/javascript" src="https://storage.googleapis.com/drawboard/jquery-latest.min.js"></script>
+    <script>
+            var roomID;
+            var studentName;
+            $(document).ready(function(){
+                roomID = prompt("Enter roomID", "1234");
+                studentName = prompt("Enter your name","random123");
+                $('#title')[0].textContent = "Hello! "+studentName+ ". you are attending RoomID:" + roomID;
+                
+            });
+        </script>
     <script>
         var clickX = new Array();
         var clickY = new Array();
         var clickDrag = new Array();
         context = document.getElementById('canvas').getContext("2d");
-        var ws = new WebSocket("ws://127.0.0.1:9999/"),
-            messages = document.createElement('ul');
+        var s = "ws://10.203.65.168:9999/";
+        var ws = new WebSocket(s);
         ws.onmessage = function (event) {
             var arr = JSON.parse(event.data);
-            console.log(arr)
-            clickX = arr.x
-            clickY = arr.y
-            clickDrag = arr.drag
-            redraw()
+            if(arr.msg=='draw'){
+                if(arr.roomID == roomID){
+                    clickX = arr.x
+                    clickY = arr.y
+                    clickDrag = arr.drag
+                    redraw()
+                }
+            }else if(arr.msg=='stulist'){
+                console.log(arr.data);
+                var myClassmate = arr.data[roomID];
+                console.log('Classmates');
+                $('#studentList').empty();
+                for(var i in myClassmate){
+                    console.log(myClassmate[i]);
+                    $('#studentList').append('<li style="display:inline;padding:5px;">'+myClassmate[i]+'</li>');
+                }
+            }
         };
-        document.body.appendChild(messages);
 
         function redraw() {
             context.clearRect(0, 0, context.canvas.width, context.canvas.height); // Clears the canvas
@@ -46,6 +71,10 @@
                 context.stroke();
             }
         }
+        ws.onopen = function(event){
+                msg = {msg:'newstudent',name:studentName,roomID:roomID};
+                ws.send(JSON.stringify(msg));
+            }
     </script>
 </body>
 
